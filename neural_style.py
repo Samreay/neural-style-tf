@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_VLOG_LEVEL'] = 3
 import tensorflow as tf
 import numpy as np 
 import scipy.io  
@@ -6,7 +8,6 @@ import struct
 import errno
 import time                       
 import cv2
-import os
 
 '''
   parsing and configuration
