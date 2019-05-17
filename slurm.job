@@ -10,6 +10,7 @@
 module load compilers/cuda/9.2
 . ~/miniconda/etc/profile.d/conda.sh
 conda activate style
-
-## python neural_style.py --content_img golden_gate.jpg --content_img_dir image_input --optimizer adam --style_imgs starry-night.jpg --style_imgs_dir styles --max_size 512 --max_iterations 1000 --device /gpu:0 --verbose
-python neural_style.py --content_img golden_gate.jpg --content_img_dir image_input --style_imgs starry-night.jpg --style_imgs_dir styles --max_size 512 --max_iterations 1000 --device /gpu:0 --verbose
+startt=$(date +"%T")
+python neural_style.py --content_img golden_gate.jpg --content_img_dir image_input --style_imgs starry-night.jpg --style_imgs_dir styles --max_size 1024 --max_iterations 1000 --device /gpu:0 --verbose
+endt=$(date +"%T")
+echo "Start to finish time: $startt -> $endt"
