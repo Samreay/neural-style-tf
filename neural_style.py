@@ -596,7 +596,7 @@ def stylize(content_img, style_imgs, init_img, frame=None):
     if args.video:
       write_video_output(frame, output_img)
     else:
-      write_image_output(output_img, content_img, style_imgs, init_img)
+      write_image_output(output_img, content_img, style_imgs, init_img, iteration=args.max_iterations)
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img):
   if args.verbose: print('\nMINIMIZING LOSS USING: L-BFGS OPTIMIZER')
@@ -635,21 +635,21 @@ def write_video_output(frame, output_img):
   path = os.path.join(args.video_output_dir, fn)
   write_image(path, output_img)
 
-def write_image_output(output_img, content_img, style_imgs, init_img):
+def write_image_output(output_img, content_img, style_imgs, init_img, iteration=0):
   out_dir = os.path.join(args.img_output_dir, args.img_name)
   maybe_make_directory(out_dir)
-  img_path = os.path.join(out_dir, args.img_name+'.png')
-  content_path = os.path.join(out_dir, 'content.png')
-  init_path = os.path.join(out_dir, 'init.png')
+  img_path = os.path.join(out_dir, args.img_name+f'_{iteration}.png')
+  # content_path = os.path.join(out_dir, 'content.png')
+  # init_path = os.path.join(out_dir, 'init.png')
 
   write_image(img_path, output_img)
-  write_image(content_path, content_img)
-  write_image(init_path, init_img)
-  index = 0
-  for style_img in style_imgs:
-    path = os.path.join(out_dir, 'style_'+str(index)+'.png')
-    write_image(path, style_img)
-    index += 1
+  # write_image(content_path, content_img)
+  # write_image(init_path, init_img)
+  # index = 0
+  # for style_img in style_imgs:
+  #   path = os.path.join(out_dir, 'style_'+str(index)+'.png')
+  #   write_image(path, style_img)
+  #   index += 1
   
   # save the configuration settings
   out_file = os.path.join(out_dir, 'meta_data.txt')
