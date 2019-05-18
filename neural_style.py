@@ -221,7 +221,7 @@ def parse_args():
 
 
 def build_model(input_img):
-    if args.verbose: logging.info('\nBUILDING VGG-19 NETWORK')
+    if args.verbose: logging.info('BUILDING VGG-19 NETWORK')
     net = {}
     _, h, w, d = input_img.shape
 
@@ -527,7 +527,9 @@ def check_image(img, path):
 
 
 def stylize(content_img, style_imgs, init_img):
-    with tf.device(args.device), tf.Session() as sess:
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.device(args.device), tf.Session(config=config) as sess:
         # setup network
         net = build_model(content_img)
 
@@ -574,7 +576,7 @@ def save_image(sess, net, content_img, iteration=0):
 
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
-    if args.verbose: logging.info('\nMINIMIZING LOSS USING: L-BFGS OPTIMIZER')
+    if args.verbose: logging.info('MINIMIZING LOSS USING: L-BFGS OPTIMIZER')
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
     sess.run(net['input'].assign(init_img))
@@ -585,7 +587,7 @@ def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
 
 
 def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
-    if args.verbose: logging.info('\nMINIMIZING LOSS USING: ADAM OPTIMIZER')
+    if args.verbose: logging.info('MINIMIZING LOSS USING: ADAM OPTIMIZER')
     train_op = optimizer.minimize(loss)
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
@@ -761,7 +763,7 @@ def render_single_image():
     content_img = get_content_image(args.content_img)
     style_imgs = get_style_images(content_img)
     with tf.Graph().as_default():
-        logging.info('\n---- RENDERING SINGLE IMAGE ----\n')
+        logging.info('---- RENDERING SINGLE IMAGE ----\n')
         init_img = get_init_image(args.init_img_type, content_img, style_imgs)
         tick = time.time()
         stylize(content_img, style_imgs, init_img)
