@@ -578,11 +578,8 @@ def stylize(content_img, style_imgs, init_img):
 
 def save_image(sess, net, content_img, iteration=0):
     output_img = sess.run(net['input'])
-
-    if args.original_colors:
-        output_img = convert_to_original_colors(np.copy(content_img), output_img)
-
     write_image_output(output_img, iteration=iteration)
+    write_image_output(convert_to_original_colors(np.copy(content_img), output_img), iteration=iteration, original_colour=True)
 
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
@@ -622,20 +619,20 @@ def get_optimizer(loss):
     return optimizer
 
 
-def get_output_name(iteration):
+def get_output_name(iteration, original_colour=False):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
     if args.optimizer == "adam":
-        name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.jpg"
+        name = f"{args.content_img.split('.')[0]}_{'oc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration}.jpg"
     else:
-        name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration:04d}.jpg"
+        name = f"{args.content_img.split('.')[0]}_{'oc_' if original_colour else ''}{style_name}_{iteration:04d}.jpg"
     return name
 
 
-def write_image_output(output_img, iteration=0):
+def write_image_output(output_img, iteration=0, original_colour=False):
     img_name = args.img_name if args.img_name is not None else args.content_img.split(".")[0]
     out_dir = os.path.join(args.img_output_dir, img_name)
     maybe_make_directory(out_dir)
-    name = get_output_name(iteration)
+    name = get_output_name(iteration, original_colour=original_colour)
     if args.verbose: logging.info(f"Saving image to {name}")
     img_path = os.path.join(out_dir, name)
     write_image(img_path, output_img)
