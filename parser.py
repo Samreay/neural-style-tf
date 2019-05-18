@@ -22,11 +22,12 @@ if __name__ == "__main__":
 #SBATCH --nodes=1 # Run the task on a single node
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
-#SBATCH --output=logs/output_%a.log
+#SBATCH --output=logs/{content_img}_%a.log
 #SBATCH --mem=30g
 #SBATCH --time=01:00:00
 #SBATCH --partition gpu
 #SBATCH --array=1-{len(style_files)}
+#SBATCH -J {content_img}
 
 module load compilers/cuda/9.2
 . ~/miniconda/etc/profile.d/conda.sh
@@ -35,9 +36,11 @@ conda activate style
 PARAMS=`expr ${{SLURM_ARRAY_TASK_ID}} - 1`
 List={' '.join(style_files)}
 arr=($List)
+style=${{arr[$PARAMS]}}
+echo $style
 
 startt=$(date +"%T")
-python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs ${{arr[$PARAMS]}} --max_size 1024 --max_iterations 1000 --device /gpu:0 --verbose
+python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs $style --max_size 1024 --max_iterations 1000 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
@@ -45,4 +48,4 @@ echo "Start to finish time: $startt -> $endt"
     with open(slurm_filename, "w") as f:
         f.write(template)
 
-    subprocess.run(["sbatch", slurm_filename], shell=True)
+    subprocess.run(["sbatch", slurm_filename], shell=True, stdin=None, stdout=None, stderr=None)
