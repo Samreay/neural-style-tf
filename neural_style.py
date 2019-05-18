@@ -614,8 +614,10 @@ def get_optimizer(loss):
 
 def get_output_name(iteration):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
-    # name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.png"
-    name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration}.png"
+    if args.optimizer == "adam":
+        name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.png"
+    else:
+        name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration}.png"
     return name
 
 
