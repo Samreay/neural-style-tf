@@ -120,7 +120,7 @@ def parse_args():
                         help='Seed for the random number generator. (default: %(default)s)')
 
     parser.add_argument('--model_weights', type=str,
-                        default='imagenet-vgg-verydeep-19.mat',
+                        default='imagenet-vgg-verydeep-19-compressed.mat',
                         help='Weights and biases of the VGG-19 network.')
 
     parser.add_argument('--pooling_type', type=str,
@@ -328,13 +328,19 @@ def pool_layer(layer_name, layer_input):
 
 
 def get_weights(vgg_layers, i):
-    weights = vgg_layers[i][0][0][2][0][0]
+    if "compressed" in args.model_weights:
+        weights = vgg_layers[i][0]
+    else:
+        weights = vgg_layers[i][0][0][2][0][0]
     W = tf.constant(weights)
     return W
 
 
 def get_bias(vgg_layers, i):
-    bias = vgg_layers[i][0][0][2][0][1]
+    if "compressed" in args.model_weights:
+        bias = vgg_layers[i][1]
+    else:
+        bias = vgg_layers[i][0][0][2][0][1]
     b = tf.constant(np.reshape(bias, (bias.size)))
     return b
 

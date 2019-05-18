@@ -49,7 +49,7 @@ style=${{arr[$PARAMS]}}
 echo "$style"
 
 startt=$(date +"%T")
-python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size 1024 --max_iterations 2000 --print_iterations 500 --device /gpu:0 --verbose
+python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size 512 --max_iterations 2000 --print_iterations 500 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
