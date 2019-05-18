@@ -120,7 +120,7 @@ def parse_args():
                         help='Seed for the random number generator. (default: %(default)s)')
 
     parser.add_argument('--model_weights', type=str,
-                        default='imagenet-vgg-verydeep-19-compressed.mat',
+                        default='imagenet-vgg-verydeep-19.mat',
                         help='Weights and biases of the VGG-19 network.')
 
     parser.add_argument('--pooling_type', type=str,
