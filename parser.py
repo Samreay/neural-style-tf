@@ -1,11 +1,19 @@
 import argparse
 import os
 import subprocess
+import logging
+
 
 if __name__ == "__main__":
     # Set up command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="the name of the yml config file to run. For example: configs/default.yml")
+
+    fmt = "[%(levelname)8s |%(funcName)21s:%(lineno)3d]   %(message)s"
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=fmt,
+    )
 
     args = parser.parse_args()
     image_path = args.image
@@ -44,8 +52,10 @@ python neural_style.py --content_img {content_img} --content_img_dir {content_im
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
+    logging.info("Writing slurm job script")
     slurm_filename = os.path.join("jobs", content_img.split(".")[0] + ".job")
     with open(slurm_filename, "w") as f:
         f.write(template)
-
-    subprocess.run(["sbatch", slurm_filename], shell=True, stdin=None, stdout=None, stderr=None)
+    logging.info("Executing sbatch")
+    subprocess.run(["sbatch", slurm_filename])
+    logging.info("sbatch executed")
