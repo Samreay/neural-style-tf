@@ -601,7 +601,6 @@ def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
 
 
 def get_optimizer(loss):
-    print_iterations = args.print_iterations
     if args.optimizer == 'lbfgs':
         optimizer = tf.contrib.opt.ScipyOptimizerInterface(
             loss, method='L-BFGS-B',
@@ -613,7 +612,8 @@ def get_optimizer(loss):
 
 def get_output_name(iteration):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
-    name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.png"
+    # name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.png"
+    name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration}.png"
     return name
 
 
