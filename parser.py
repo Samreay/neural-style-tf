@@ -19,6 +19,7 @@ if __name__ == "__main__":
     image_path = args.image
     content_img_dir = os.path.dirname(image_path)
     content_img = os.path.basename(image_path)
+    img_name = content_img.split(".")[0]
 
     style_files = os.listdir("styles")
 
@@ -30,12 +31,12 @@ if __name__ == "__main__":
 #SBATCH --nodes=1 # Run the task on a single node
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
-#SBATCH --output=logs/{content_img}_%a.log
+#SBATCH --output=logs/{img_name}_%a.log
 #SBATCH --mem=30g
 #SBATCH --time=01:00:00
 #SBATCH --partition gpu
 #SBATCH --array=1-{len(style_files)}
-#SBATCH -J {content_img}
+#SBATCH -J {img_name}
 
 module load compilers/cuda/9.2
 . ~/miniconda/etc/profile.d/conda.sh
@@ -53,7 +54,7 @@ endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
     logging.info("Writing slurm job script")
-    slurm_filename = os.path.join("jobs", content_img.split(".")[0] + ".job")
+    slurm_filename = os.path.join("jobs", img_name + ".job")
     with open(slurm_filename, "w") as f:
         f.write(template)
     logging.info("Executing sbatch")
