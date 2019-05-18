@@ -605,8 +605,7 @@ def get_optimizer(loss):
     if args.optimizer == 'lbfgs':
         optimizer = tf.contrib.opt.ScipyOptimizerInterface(
             loss, method='L-BFGS-B',
-            options={'maxiter': args.print_iterations,
-                     'disp': print_iterations})
+            options={'maxiter': args.print_iterations})
     elif args.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(args.learning_rate)
     return optimizer
