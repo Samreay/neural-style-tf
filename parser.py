@@ -43,7 +43,7 @@ module load compilers/cuda/9.2
 conda activate style
 
 PARAMS=`expr ${{SLURM_ARRAY_TASK_ID}} - 1`
-List={' '.join(style_files)}
+List="{' '.join(style_files)}"
 arr=($List)
 style=${{arr[$PARAMS]}}
 echo "$style"
