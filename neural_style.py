@@ -782,7 +782,7 @@ def main():
         level=logging.DEBUG,
         format=fmt,
     )
-
+    logging.info(f"Running on content {args.content_img} with style {args.style_imgs}")
     render_single_image()
 
 
