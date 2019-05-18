@@ -11,6 +11,6 @@ module load compilers/cuda/9.2
 . ~/miniconda/etc/profile.d/conda.sh
 conda activate style
 startt=$(date +"%T")
-python neural_style.py --content_img ducky_profile.jpg --img_name normal --content_img_dir image_input --style_imgs galaxy.jpg --style_imgs_dir styles --max_size 2056 --max_iterations 200 --device /gpu:0 --verbose
+python neural_style.py --content_img ducky_profile.jpg --style_imgs galaxy.jpg --max_size 768 --max_iterations 500 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"

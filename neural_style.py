@@ -23,8 +23,8 @@ def parse_args():
                         help='Boolean flag indicating if statements should be printed to the console.')
 
     parser.add_argument('--img_name', type=str,
-                        default='result',
-                        help='Filename of the output image.')
+                        default=None,
+                        help='Dir of the output image.')
 
     parser.add_argument('--style_imgs', nargs='+', type=str,
                         help='Filenames of the style images (example: starry-night.jpg)',
@@ -152,12 +152,8 @@ def parse_args():
                         help='Max number of iterations for the Adam or L-BFGS optimizer. (default: %(default)s)')
 
     parser.add_argument('--print_iterations', type=int,
-                        default=50,
+                        default=100,
                         help='Number of iterations between optimizer print statements. (default: %(default)s)')
-
-    # options for video frames
-    parser.add_argument('--video', action='store_true',
-                        help='Boolean flag indicating if the user is generating a video.')
 
     parser.add_argument('--start_frame', type=int,
                         default=1,
@@ -176,14 +172,6 @@ def parse_args():
                         choices=['prev_warped', 'prev', 'random', 'content', 'style'],
                         default='prev_warped',
                         help='Image used to initialize the network during the every rendering after the first frame.')
-
-    parser.add_argument('--video_input_dir', type=str,
-                        default='./video_input',
-                        help='Relative or absolute directory path to input frames.')
-
-    parser.add_argument('--video_output_dir', type=str,
-                        default='./video_output',
-                        help='Relative or absolute directory path to output frames.')
 
     parser.add_argument('--content_frame_frmt', type=str,
                         default='frame_{}.ppm',
@@ -221,10 +209,7 @@ def parse_args():
     args.style_imgs_weights = normalize(args.style_imgs_weights)
 
     # create directories for output
-    if args.video:
-        maybe_make_directory(args.video_output_dir)
-    else:
-        maybe_make_directory(args.img_output_dir)
+    maybe_make_directory(args.img_output_dir)
 
     return args
 
@@ -450,49 +435,6 @@ def sum_content_losses(sess, net, content_img):
 
 
 '''
-  'artistic style transfer for videos' loss functions
-'''
-
-
-def temporal_loss(x, w, c):
-    c = c[np.newaxis, :, :, :]
-    D = float(x.size)
-    loss = (1. / D) * tf.reduce_sum(c * tf.nn.l2_loss(x - w))
-    loss = tf.cast(loss, tf.float32)
-    return loss
-
-
-def get_longterm_weights(i, j):
-    c_sum = 0.
-    for k in range(args.prev_frame_indices):
-        if i - k > i - j:
-            c_sum += get_content_weights(i, i - k)
-    c = get_content_weights(i, i - j)
-    c_max = tf.maximum(c - c_sum, 0.)
-    return c_max
-
-
-def sum_longterm_temporal_losses(sess, net, frame, input_img):
-    x = sess.run(net['input'].assign(input_img))
-    loss = 0.
-    for j in range(args.prev_frame_indices):
-        prev_frame = frame - j
-        w = get_prev_warped_frame(frame)
-        c = get_longterm_weights(frame, prev_frame)
-        loss += temporal_loss(x, w, c)
-    return loss
-
-
-def sum_shortterm_temporal_losses(sess, net, frame, input_img):
-    x = sess.run(net['input'].assign(input_img))
-    prev_frame = frame - 1
-    w = get_prev_warped_frame(frame)
-    c = get_content_weights(frame, prev_frame)
-    loss = temporal_loss(x, w, c)
-    return loss
-
-
-'''
   utilities and i/o
 '''
 
@@ -584,7 +526,7 @@ def check_image(img, path):
 '''
 
 
-def stylize(content_img, style_imgs, init_img, frame=None):
+def stylize(content_img, style_imgs, init_img):
     with tf.device(args.device), tf.Session() as sess:
         # setup network
         net = build_model(content_img)
@@ -611,29 +553,24 @@ def stylize(content_img, style_imgs, init_img, frame=None):
         L_total += beta * L_style
         L_total += theta * L_tv
 
-        # video temporal loss
-        if args.video and frame > 1:
-            gamma = args.temporal_weight
-            L_temporal = sum_shortterm_temporal_losses(sess, net, frame, init_img)
-            L_total += gamma * L_temporal
-
         # optimization algorithm
         optimizer = get_optimizer(L_total)
 
         if args.optimizer == 'adam':
-            minimize_with_adam(sess, net, optimizer, init_img, L_total)
+            minimize_with_adam(sess, net, optimizer, init_img, L_total, content_img)
         elif args.optimizer == 'lbfgs':
             minimize_with_lbfgs(sess, net, optimizer, init_img)
 
-        output_img = sess.run(net['input'])
+        save_image(sess, net, content_img, iteration=args.max_iterations)
 
-        if args.original_colors:
-            output_img = convert_to_original_colors(np.copy(content_img), output_img)
 
-        if args.video:
-            write_video_output(frame, output_img)
-        else:
-            write_image_output(output_img, content_img, style_imgs, init_img, iteration=args.max_iterations)
+def save_image(sess, net, content_img, iteration=0):
+    output_img = sess.run(net['input'])
+
+    if args.original_colors:
+        output_img = convert_to_original_colors(np.copy(content_img), output_img)
+
+    write_image_output(output_img, iteration=iteration)
 
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img):
@@ -644,18 +581,19 @@ def minimize_with_lbfgs(sess, net, optimizer, init_img):
     optimizer.minimize(sess)
 
 
-def minimize_with_adam(sess, net, optimizer, init_img, loss):
+def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
     if args.verbose: print('\nMINIMIZING LOSS USING: ADAM OPTIMIZER')
     train_op = optimizer.minimize(loss)
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
     sess.run(net['input'].assign(init_img))
     iterations = 0
-    while (iterations < args.max_iterations):
+    while iterations < args.max_iterations:
         sess.run(train_op)
-        if iterations % args.print_iterations == 0 and args.verbose:
+        if iterations % args.print_iterations == 0:
             curr_loss = loss.eval()
-            print("At iterate {}\tf=  {}".format(iterations, curr_loss))
+            print("Iteration {}\tf=  {}".format(iterations, curr_loss))
+            write_image(sess, net, content_img, iteration=iterations)
         iterations += 1
 
 
@@ -671,52 +609,42 @@ def get_optimizer(loss):
     return optimizer
 
 
-def write_video_output(frame, output_img):
-    fn = args.content_frame_frmt.format(str(frame).zfill(4))
-    path = os.path.join(args.video_output_dir, fn)
-    write_image(path, output_img)
+def get_output_name(iteration):
+    style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
+    name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration}.png"
+    return name
 
 
-def write_image_output(output_img, content_img, style_imgs, init_img, iteration=0):
-    out_dir = os.path.join(args.img_output_dir, args.img_name)
+def write_image_output(output_img, iteration=0):
+    img_name = args.img_name if args.img_name is not None else args.content_img.split(".")[0]
+    out_dir = os.path.join(args.img_output_dir, img_name)
     maybe_make_directory(out_dir)
-    img_path = os.path.join(out_dir, args.img_name + f'_{iteration}.png')
-    # content_path = os.path.join(out_dir, 'content.png')
-    # init_path = os.path.join(out_dir, 'init.png')
-
+    img_path = os.path.join(out_dir, get_output_name(iteration))
     write_image(img_path, output_img)
-    # write_image(content_path, content_img)
-    # write_image(init_path, init_img)
-    # index = 0
-    # for style_img in style_imgs:
-    #   path = os.path.join(out_dir, 'style_'+str(index)+'.png')
-    #   write_image(path, style_img)
-    #   index += 1
 
-    # save the configuration settings
-    out_file = os.path.join(out_dir, 'meta_data.txt')
-    f = open(out_file, 'w')
-    f.write('image_name: {}\n'.format(args.img_name))
-    f.write('content: {}\n'.format(args.content_img))
-    index = 0
-    for style_img, weight in zip(args.style_imgs, args.style_imgs_weights):
-        f.write('styles[' + str(index) + ']: {} * {}\n'.format(weight, style_img))
-        index += 1
-    index = 0
-    if args.style_mask_imgs is not None:
-        for mask in args.style_mask_imgs:
-            f.write('style_masks[' + str(index) + ']: {}\n'.format(mask))
-            index += 1
-    f.write('init_type: {}\n'.format(args.init_img_type))
-    f.write('content_weight: {}\n'.format(args.content_weight))
-    f.write('style_weight: {}\n'.format(args.style_weight))
-    f.write('tv_weight: {}\n'.format(args.tv_weight))
-    f.write('content_layers: {}\n'.format(args.content_layers))
-    f.write('style_layers: {}\n'.format(args.style_layers))
-    f.write('optimizer_type: {}\n'.format(args.optimizer))
-    f.write('max_iterations: {}\n'.format(args.max_iterations))
-    f.write('max_image_size: {}\n'.format(args.max_size))
-    f.close()
+    # out_file = os.path.join(out_dir, 'meta_data.txt')
+    # f = open(out_file, 'w')
+    # f.write('image_name: {}\n'.format(args.img_name))
+    # f.write('content: {}\n'.format(args.content_img))
+    # index = 0
+    # for style_img, weight in zip(args.style_imgs, args.style_imgs_weights):
+    #     f.write('styles[' + str(index) + ']: {} * {}\n'.format(weight, style_img))
+    #     index += 1
+    # index = 0
+    # if args.style_mask_imgs is not None:
+    #     for mask in args.style_mask_imgs:
+    #         f.write('style_masks[' + str(index) + ']: {}\n'.format(mask))
+    #         index += 1
+    # f.write('init_type: {}\n'.format(args.init_img_type))
+    # f.write('content_weight: {}\n'.format(args.content_weight))
+    # f.write('style_weight: {}\n'.format(args.style_weight))
+    # f.write('tv_weight: {}\n'.format(args.tv_weight))
+    # f.write('content_layers: {}\n'.format(args.content_layers))
+    # f.write('style_layers: {}\n'.format(args.style_layers))
+    # f.write('optimizer_type: {}\n'.format(args.optimizer))
+    # f.write('max_iterations: {}\n'.format(args.max_iterations))
+    # f.write('max_image_size: {}\n'.format(args.max_size))
+    # f.close()
 
 
 '''
@@ -732,20 +660,6 @@ def get_init_image(init_type, content_img, style_imgs, frame=None):
     elif init_type == 'random':
         init_img = get_noise_image(args.noise_ratio, content_img)
         return init_img
-    # only for video frames
-    elif init_type == 'prev':
-        init_img = get_prev_frame(frame)
-        return init_img
-    elif init_type == 'prev_warped':
-        init_img = get_prev_warped_frame(frame)
-        return init_img
-
-
-def get_content_frame(frame):
-    fn = args.content_frame_frmt.format(str(frame).zfill(4))
-    path = os.path.join(args.video_input_dir, fn)
-    img = read_image(path)
-    return img
 
 
 def get_content_image(content_img):
@@ -800,38 +714,6 @@ def get_mask_image(mask_img, width, height):
     return img
 
 
-def get_prev_frame(frame):
-    # previously stylized frame
-    prev_frame = frame - 1
-    fn = args.content_frame_frmt.format(str(prev_frame).zfill(4))
-    path = os.path.join(args.video_output_dir, fn)
-    img = cv2.imread(path, cv2.IMREAD_COLOR)
-    check_image(img, path)
-    return img
-
-
-def get_prev_warped_frame(frame):
-    prev_img = get_prev_frame(frame)
-    prev_frame = frame - 1
-    # backwards flow: current frame -> previous frame
-    fn = args.backward_optical_flow_frmt.format(str(frame), str(prev_frame))
-    path = os.path.join(args.video_input_dir, fn)
-    flow = read_flow_file(path)
-    warped_img = warp_image(prev_img, flow).astype(np.float32)
-    img = preprocess(warped_img)
-    return img
-
-
-def get_content_weights(frame, prev_frame):
-    forward_fn = args.content_weights_frmt.format(str(prev_frame), str(frame))
-    backward_fn = args.content_weights_frmt.format(str(frame), str(prev_frame))
-    forward_path = os.path.join(args.video_input_dir, forward_fn)
-    backward_path = os.path.join(args.video_input_dir, backward_fn)
-    forward_weights = read_weights_file(forward_path)
-    backward_weights = read_weights_file(backward_path)
-    return forward_weights  # , backward_weights
-
-
 def warp_image(src, flow):
     _, h, w = flow.shape
     flow_map = np.zeros(flow.shape, dtype=np.float32)
@@ -883,37 +765,12 @@ def render_single_image():
         print('Single image elapsed time: {}'.format(tock - tick))
 
 
-def render_video():
-    for frame in range(args.start_frame, args.end_frame + 1):
-        with tf.Graph().as_default():
-            print('\n---- RENDERING VIDEO FRAME: {}/{} ----\n'.format(frame, args.end_frame))
-            if frame == 1:
-                content_frame = get_content_frame(frame)
-                style_imgs = get_style_images(content_frame)
-                init_img = get_init_image(args.first_frame_type, content_frame, style_imgs, frame)
-                args.max_iterations = args.first_frame_iterations
-                tick = time.time()
-                stylize(content_frame, style_imgs, init_img, frame)
-                tock = time.time()
-                print('Frame {} elapsed time: {}'.format(frame, tock - tick))
-            else:
-                content_frame = get_content_frame(frame)
-                style_imgs = get_style_images(content_frame)
-                init_img = get_init_image(args.init_frame_type, content_frame, style_imgs, frame)
-                args.max_iterations = args.frame_iterations
-                tick = time.time()
-                stylize(content_frame, style_imgs, init_img, frame)
-                tock = time.time()
-                print('Frame {} elapsed time: {}'.format(frame, tock - tick))
-
-
 def main():
     global args
     args = parse_args()
-    if args.video:
-        render_video()
-    else:
-        render_single_image()
+
+    print(get_output_name(0))
+    render_single_image()
 
 
 if __name__ == '__main__':
