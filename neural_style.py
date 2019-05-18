@@ -559,7 +559,7 @@ def stylize(content_img, style_imgs, init_img):
         if args.optimizer == 'adam':
             minimize_with_adam(sess, net, optimizer, init_img, L_total, content_img)
         elif args.optimizer == 'lbfgs':
-            minimize_with_lbfgs(sess, net, optimizer, init_img)
+            minimize_with_lbfgs(sess, net, optimizer, init_img, content_img)
 
         save_image(sess, net, content_img, iteration=args.max_iterations)
 
@@ -573,12 +573,15 @@ def save_image(sess, net, content_img, iteration=0):
     write_image_output(output_img, iteration=iteration)
 
 
-def minimize_with_lbfgs(sess, net, optimizer, init_img):
+def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
     if args.verbose: print('\nMINIMIZING LOSS USING: L-BFGS OPTIMIZER')
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
     sess.run(net['input'].assign(init_img))
-    optimizer.minimize(sess)
+    num_iterations = args.max_iterations // args.print_iterations
+    for i in range(num_iterations):
+        optimizer.minimize(sess)
+        save_image(sess, net, content_img, iteration=(i+1)*args.print_iterations)
 
 
 def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
@@ -593,16 +596,16 @@ def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
         if iterations % args.print_iterations == 0:
             curr_loss = loss.eval()
             print("Iteration {}\tf=  {}".format(iterations, curr_loss))
-            write_image(sess, net, content_img, iteration=iterations)
+            save_image(sess, net, content_img, iteration=iterations)
         iterations += 1
 
 
 def get_optimizer(loss):
-    print_iterations = args.print_iterations if args.verbose else 0
+    print_iterations = args.print_iterations
     if args.optimizer == 'lbfgs':
         optimizer = tf.contrib.opt.ScipyOptimizerInterface(
             loss, method='L-BFGS-B',
-            options={'maxiter': args.max_iterations,
+            options={'maxiter': args.print_iterations,
                      'disp': print_iterations})
     elif args.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(args.learning_rate)
@@ -611,7 +614,7 @@ def get_optimizer(loss):
 
 def get_output_name(iteration):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
-    name = f"{args.content_img.split('.')[0]}_{style_name}_{iteration}.png"
+    name = f"{args.content_img.split('.')[0]}_{style_name}_{args.learning_rate}_{iteration}.png"
     return name
 
 
@@ -619,7 +622,9 @@ def write_image_output(output_img, iteration=0):
     img_name = args.img_name if args.img_name is not None else args.content_img.split(".")[0]
     out_dir = os.path.join(args.img_output_dir, img_name)
     maybe_make_directory(out_dir)
-    img_path = os.path.join(out_dir, get_output_name(iteration))
+    name = get_output_name(iteration)
+    if args.verbose: print(f"Saving image to {name}")
+    img_path = os.path.join(out_dir, name)
     write_image(img_path, output_img)
 
     # out_file = os.path.join(out_dir, 'meta_data.txt')

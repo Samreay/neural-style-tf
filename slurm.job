@@ -3,7 +3,7 @@
 #SBATCH --nodes=1 # Run the task on a single node
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
-#SBATCH --output=output.log
+#SBATCH --output=logs/output.log
 #SBATCH --mem=50g
 #SBATCH --time=01:00:00
 
@@ -11,6 +11,6 @@ module load compilers/cuda/9.2
 . ~/miniconda/etc/profile.d/conda.sh
 conda activate style
 startt=$(date +"%T")
-python neural_style.py --content_img ducky_profile.jpg --style_imgs galaxy.jpg --max_size 768 --max_iterations 500 --device /gpu:0 --verbose
+python neural_style.py --content_img ducky_profile.jpg --style_imgs galaxy.jpg --max_size 768 --max_iterations 400 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
