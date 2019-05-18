@@ -229,8 +229,11 @@ def build_model(input_img):
     _, h, w, d = input_img.shape
 
     if args.verbose: logging.info('loading model weights...')
-    vgg_rawnet = scipy.io.loadmat(args.model_weights)
-    vgg_layers = vgg_rawnet['layers'][0]
+    if "compressed" in args.model_weights:
+        vgg_layers = scipy.io.loadmat(args.model_weights)
+    else:
+        vgg_rawnet = scipy.io.loadmat(args.model_weights)
+        vgg_layers = vgg_rawnet['layers'][0]
     if args.verbose: logging.info('constructing layers...')
     net['input'] = tf.Variable(np.zeros((1, h, w, d), dtype=np.float32))
 
