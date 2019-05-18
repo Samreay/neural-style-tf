@@ -201,6 +201,9 @@ def parse_args():
                         default=800,
                         help='Maximum number of optimizer iterations for each frame after the first frame. (default: %(default)s)')
 
+    parser.add_argument("--jpg_quality", type=int,
+                        default=70, help="Quality of JPG to save, 0 to 100")
+
     args = parser.parse_args()
 
     # normalize weights
@@ -450,7 +453,8 @@ def read_image(path):
 
 def write_image(path, img):
     img = postprocess(img)
-    cv2.imwrite(path, img)
+    # cv2.imwrite(path, img)
+    cv2.imwrite(path, img, [int(cv2.IMWRITE_JPEG_QUALITY), args.jpg_quality])
 
 
 def preprocess(img):
