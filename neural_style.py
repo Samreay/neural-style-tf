@@ -120,7 +120,7 @@ def parse_args():
                         help='Seed for the random number generator. (default: %(default)s)')
 
     parser.add_argument('--model_weights', type=str,
-                        default='imagenet-vgg-verydeep-19.mat',
+                        default='imagenet-vgg-verydeep-19-compressed.mat',
                         help='Weights and biases of the VGG-19 network.')
 
     parser.add_argument('--pooling_type', type=str,
@@ -229,11 +229,8 @@ def build_model(input_img):
     _, h, w, d = input_img.shape
 
     if args.verbose: logging.info('loading model weights...')
-    if "compressed" in args.model_weights:
-        vgg_layers = scipy.io.loadmat(args.model_weights)
-    else:
-        vgg_rawnet = scipy.io.loadmat(args.model_weights)
-        vgg_layers = vgg_rawnet['layers'][0]
+    vgg_rawnet = scipy.io.loadmat(args.model_weights)
+    vgg_layers = vgg_rawnet['layers'][0]
     if args.verbose: logging.info('constructing layers...')
     net['input'] = tf.Variable(np.zeros((1, h, w, d), dtype=np.float32))
 
