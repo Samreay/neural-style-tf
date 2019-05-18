@@ -8,7 +8,7 @@ import struct
 import errno
 import time
 import cv2
-
+import logging
 '''
   parsing and configuration
 '''
@@ -152,7 +152,7 @@ def parse_args():
                         help='Max number of iterations for the Adam or L-BFGS optimizer. (default: %(default)s)')
 
     parser.add_argument('--print_iterations', type=int,
-                        default=100,
+                        default=200,
                         help='Number of iterations between optimizer print statements. (default: %(default)s)')
 
     parser.add_argument('--start_frame', type=int,
@@ -221,17 +221,17 @@ def parse_args():
 
 
 def build_model(input_img):
-    if args.verbose: print('\nBUILDING VGG-19 NETWORK')
+    if args.verbose: logging.info('\nBUILDING VGG-19 NETWORK')
     net = {}
     _, h, w, d = input_img.shape
 
-    if args.verbose: print('loading model weights...')
+    if args.verbose: logging.info('loading model weights...')
     vgg_rawnet = scipy.io.loadmat(args.model_weights)
     vgg_layers = vgg_rawnet['layers'][0]
-    if args.verbose: print('constructing layers...')
+    if args.verbose: logging.info('constructing layers...')
     net['input'] = tf.Variable(np.zeros((1, h, w, d), dtype=np.float32))
 
-    if args.verbose: print('LAYER GROUP 1')
+    if args.verbose: logging.info('LAYER GROUP 1')
     net['conv1_1'] = conv_layer('conv1_1', net['input'], W=get_weights(vgg_layers, 0))
     net['relu1_1'] = relu_layer('relu1_1', net['conv1_1'], b=get_bias(vgg_layers, 0))
 
@@ -240,7 +240,7 @@ def build_model(input_img):
 
     net['pool1'] = pool_layer('pool1', net['relu1_2'])
 
-    if args.verbose: print('LAYER GROUP 2')
+    if args.verbose: logging.info('LAYER GROUP 2')
     net['conv2_1'] = conv_layer('conv2_1', net['pool1'], W=get_weights(vgg_layers, 5))
     net['relu2_1'] = relu_layer('relu2_1', net['conv2_1'], b=get_bias(vgg_layers, 5))
 
@@ -249,7 +249,7 @@ def build_model(input_img):
 
     net['pool2'] = pool_layer('pool2', net['relu2_2'])
 
-    if args.verbose: print('LAYER GROUP 3')
+    if args.verbose: logging.info('LAYER GROUP 3')
     net['conv3_1'] = conv_layer('conv3_1', net['pool2'], W=get_weights(vgg_layers, 10))
     net['relu3_1'] = relu_layer('relu3_1', net['conv3_1'], b=get_bias(vgg_layers, 10))
 
@@ -264,7 +264,7 @@ def build_model(input_img):
 
     net['pool3'] = pool_layer('pool3', net['relu3_4'])
 
-    if args.verbose: print('LAYER GROUP 4')
+    if args.verbose: logging.info('LAYER GROUP 4')
     net['conv4_1'] = conv_layer('conv4_1', net['pool3'], W=get_weights(vgg_layers, 19))
     net['relu4_1'] = relu_layer('relu4_1', net['conv4_1'], b=get_bias(vgg_layers, 19))
 
@@ -279,7 +279,7 @@ def build_model(input_img):
 
     net['pool4'] = pool_layer('pool4', net['relu4_4'])
 
-    if args.verbose: print('LAYER GROUP 5')
+    if args.verbose: logging.info('LAYER GROUP 5')
     net['conv5_1'] = conv_layer('conv5_1', net['pool4'], W=get_weights(vgg_layers, 28))
     net['relu5_1'] = relu_layer('relu5_1', net['conv5_1'], b=get_bias(vgg_layers, 28))
 
@@ -299,7 +299,7 @@ def build_model(input_img):
 
 def conv_layer(layer_name, layer_input, W):
     conv = tf.nn.conv2d(layer_input, W, strides=[1, 1, 1, 1], padding='SAME')
-    if args.verbose: print('--{} | shape={} | weights_shape={}'.format(layer_name,
+    if args.verbose: logging.info('--{} | shape={} | weights_shape={}'.format(layer_name,
                                                                        conv.get_shape(), W.get_shape()))
     return conv
 
@@ -307,7 +307,7 @@ def conv_layer(layer_name, layer_input, W):
 def relu_layer(layer_name, layer_input, b):
     relu = tf.nn.relu(layer_input + b)
     if args.verbose:
-        print('--{} | shape={} | bias_shape={}'.format(layer_name, relu.get_shape(),
+        logging.info('--{} | shape={} | bias_shape={}'.format(layer_name, relu.get_shape(),
                                                        b.get_shape()))
     return relu
 
@@ -320,7 +320,7 @@ def pool_layer(layer_name, layer_input):
         pool = tf.nn.max_pool(layer_input, ksize=[1, 2, 2, 1],
                               strides=[1, 2, 2, 1], padding='SAME')
     if args.verbose:
-        print('--{}   | shape={}'.format(layer_name, pool.get_shape()))
+        logging.info('--{}   | shape={}'.format(layer_name, pool.get_shape()))
     return pool
 
 
@@ -574,7 +574,7 @@ def save_image(sess, net, content_img, iteration=0):
 
 
 def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
-    if args.verbose: print('\nMINIMIZING LOSS USING: L-BFGS OPTIMIZER')
+    if args.verbose: logging.info('\nMINIMIZING LOSS USING: L-BFGS OPTIMIZER')
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
     sess.run(net['input'].assign(init_img))
@@ -585,7 +585,7 @@ def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
 
 
 def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
-    if args.verbose: print('\nMINIMIZING LOSS USING: ADAM OPTIMIZER')
+    if args.verbose: logging.info('\nMINIMIZING LOSS USING: ADAM OPTIMIZER')
     train_op = optimizer.minimize(loss)
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
@@ -595,7 +595,7 @@ def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
         sess.run(train_op)
         if iterations % args.print_iterations == 0:
             curr_loss = loss.eval()
-            print("Iteration {}\tf=  {}".format(iterations, curr_loss))
+            logging.info("Iteration {}\tf=  {}".format(iterations, curr_loss))
             save_image(sess, net, content_img, iteration=iterations)
         iterations += 1
 
@@ -623,7 +623,7 @@ def write_image_output(output_img, iteration=0):
     out_dir = os.path.join(args.img_output_dir, img_name)
     maybe_make_directory(out_dir)
     name = get_output_name(iteration)
-    if args.verbose: print(f"Saving image to {name}")
+    if args.verbose: logging.info(f"Saving image to {name}")
     img_path = os.path.join(out_dir, name)
     write_image(img_path, output_img)
 
@@ -762,19 +762,24 @@ def render_single_image():
     content_img = get_content_image(args.content_img)
     style_imgs = get_style_images(content_img)
     with tf.Graph().as_default():
-        print('\n---- RENDERING SINGLE IMAGE ----\n')
+        logging.info('\n---- RENDERING SINGLE IMAGE ----\n')
         init_img = get_init_image(args.init_img_type, content_img, style_imgs)
         tick = time.time()
         stylize(content_img, style_imgs, init_img)
         tock = time.time()
-        print('Single image elapsed time: {}'.format(tock - tick))
+        logging.info('Single image elapsed time: {}'.format(tock - tick))
 
 
 def main():
     global args
     args = parse_args()
 
-    print(get_output_name(0))
+    fmt = "[%(levelname)8s |%(funcName)21s:%(lineno)3d]   %(message)s"
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=fmt,
+    )
+
     render_single_image()
 
 
