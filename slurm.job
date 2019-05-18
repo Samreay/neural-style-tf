@@ -3,7 +3,7 @@
 #SBATCH --nodes=1 # Run the task on a single node
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
-#SBATCH --output=logs/output.log
+#SBATCH --output=output.log
 #SBATCH --mem=50g
 #SBATCH --time=01:00:00
 
