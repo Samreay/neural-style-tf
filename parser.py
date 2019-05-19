@@ -33,7 +33,7 @@ if __name__ == "__main__":
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
 #SBATCH --output=logs/{img_name}_%a.log
 #SBATCH --mem=30g
-#SBATCH --time=01:00:00
+#SBATCH --time=05:00:00
 #SBATCH --partition gpu
 #SBATCH --array=1-{len(style_files)}
 #SBATCH -J {img_name}

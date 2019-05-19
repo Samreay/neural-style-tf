@@ -580,7 +580,7 @@ def stylize(content_img, style_imgs, init_img):
         elif args.optimizer == 'lbfgs':
             minimize_with_lbfgs(sess, net, optimizer, init_img, content_img, iterations)
 
-        save_image(sess, net, content_img, iteration=args.max_iterations)
+        # save_image(sess, net, content_img, iteration=args.max_iterations)
 
 
 def save_image(sess, net, content_img, iteration=0):
@@ -597,7 +597,7 @@ def minimize_with_lbfgs(sess, net, optimizers, init_img, content_img, iterations
     total_iterations = iterations.cumsum()
     for i, optimizer in zip(total_iterations, optimizers):
         optimizer.minimize(sess)
-        save_image(sess, net, content_img, iteration=(i+1)*args.print_iterations)
+        save_image(sess, net, content_img, iteration=i)
 
 
 def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
@@ -629,9 +629,9 @@ def get_optimizer(loss, iterations):
 def get_output_name(iteration, original_colour=False):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
     if args.optimizer == "adam":
-        name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration}.jpg"
+        name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration:05d}.jpg"
     else:
-        name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
+        name = f"oc/{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
     return name
 
 
@@ -639,6 +639,7 @@ def write_image_output(output_img, iteration=0, original_colour=False):
     img_name = args.img_name if args.img_name is not None else args.content_img.split(".")[0]
     out_dir = os.path.join(args.img_output_dir, img_name)
     maybe_make_directory(out_dir)
+    maybe_make_directory(os.path.join(out_dir, "oc"))
     name = get_output_name(iteration, original_colour=original_colour)
     if args.verbose: logging.info(f"Saving image to {name}")
     img_path = os.path.join(out_dir, name)
