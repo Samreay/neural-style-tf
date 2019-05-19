@@ -631,7 +631,7 @@ def get_output_name(iteration, original_colour=False):
     if args.optimizer == "adam":
         name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration:05d}.jpg"
     else:
-        name = f"oc/{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
+        name = f"{'oc/' if original_colour else ''}{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
     return name
 
 
