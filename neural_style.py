@@ -155,6 +155,10 @@ def parse_args():
                         default=200,
                         help='Number of iterations between optimizer print statements. (default: %(default)s)')
 
+    parser.add_argument('--num_output', type=int,
+                        default=5,
+                        help="Number of images to output as progress")
+
     parser.add_argument('--start_frame', type=int,
                         default=1,
                         help='First frame number.')
@@ -566,12 +570,15 @@ def stylize(content_img, style_imgs, init_img):
         L_total += theta * L_tv
 
         # optimization algorithm
-        optimizer = get_optimizer(L_total)
+        total_iterations = np.logspace(np.log10(100, np.log10(args.max_iterations), args.num_output)).astype(np.int)
+        iterations = np.concatenate(([100], np.diff(total_iterations)))
+        logging.debug(f"Running with iterations: {iterations}")
+        optimizer = get_optimizer(L_total, iterations)
 
         if args.optimizer == 'adam':
             minimize_with_adam(sess, net, optimizer, init_img, L_total, content_img)
         elif args.optimizer == 'lbfgs':
-            minimize_with_lbfgs(sess, net, optimizer, init_img, content_img)
+            minimize_with_lbfgs(sess, net, optimizer, init_img, content_img, iterations)
 
         save_image(sess, net, content_img, iteration=args.max_iterations)
 
@@ -582,13 +589,13 @@ def save_image(sess, net, content_img, iteration=0):
     write_image_output(convert_to_original_colors(np.copy(content_img), output_img), iteration=iteration, original_colour=True)
 
 
-def minimize_with_lbfgs(sess, net, optimizer, init_img, content_img):
+def minimize_with_lbfgs(sess, net, optimizers, init_img, content_img, iterations):
     if args.verbose: logging.info('MINIMIZING LOSS USING: L-BFGS OPTIMIZER')
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
     sess.run(net['input'].assign(init_img))
-    num_iterations = args.max_iterations // args.print_iterations
-    for i in range(num_iterations):
+    total_iterations = iterations.cumsum()
+    for i, optimizer in zip(total_iterations, optimizers):
         optimizer.minimize(sess)
         save_image(sess, net, content_img, iteration=(i+1)*args.print_iterations)
 
@@ -609,11 +616,11 @@ def minimize_with_adam(sess, net, optimizer, init_img, loss, content_img):
         iterations += 1
 
 
-def get_optimizer(loss):
+def get_optimizer(loss, iterations):
     if args.optimizer == 'lbfgs':
-        optimizer = tf.contrib.opt.ScipyOptimizerInterface(
+        optimizer = [tf.contrib.opt.ScipyOptimizerInterface(
             loss, method='L-BFGS-B',
-            options={'maxiter': args.print_iterations})
+            options={'maxiter': i}) for i in iterations]
     elif args.optimizer == 'adam':
         optimizer = tf.train.AdamOptimizer(args.learning_rate)
     return optimizer
@@ -622,9 +629,9 @@ def get_optimizer(loss):
 def get_output_name(iteration, original_colour=False):
     style_name = "_".join([i.split(".")[0] for i in args.style_imgs])
     if args.optimizer == "adam":
-        name = f"{args.content_img.split('.')[0]}_{'oc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration}.jpg"
+        name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{args.learning_rate}_{iteration}.jpg"
     else:
-        name = f"{args.content_img.split('.')[0]}_{'oc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
+        name = f"{args.content_img.split('.')[0]}_{'zoc_' if original_colour else ''}{style_name}_{iteration:05d}.jpg"
     return name
 
 
