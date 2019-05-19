@@ -570,7 +570,7 @@ def stylize(content_img, style_imgs, init_img):
         L_total += theta * L_tv
 
         # optimization algorithm
-        total_iterations = np.logspace(np.log10(100, np.log10(args.max_iterations), args.num_output)).astype(np.int)
+        total_iterations = np.logspace(np.log10(100), np.log10(args.max_iterations), args.num_output).astype(np.int)
         iterations = np.concatenate(([100], np.diff(total_iterations)))
         logging.debug(f"Running with iterations: {iterations}")
         optimizer = get_optimizer(L_total, iterations)
