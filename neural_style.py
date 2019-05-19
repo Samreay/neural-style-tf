@@ -134,7 +134,7 @@ def parse_args():
                         help='GPU or CPU mode.  GPU mode requires NVIDIA CUDA. (default|recommended: %(default)s)')
 
     parser.add_argument('--img_output_dir', type=str,
-                        default='./image_output',
+                        default='./output',
                         help='Relative or absolute directory path to output image and data.')
 
     # optimizations
