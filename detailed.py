@@ -35,7 +35,7 @@ if __name__ == "__main__":
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
 #SBATCH --output=logs/detailed_{img_name}_%a.log
-#SBATCH --mem=30g
+#SBATCH --mem=60g
 #SBATCH --time=05:00:00
 #SBATCH --partition gpu
 #SBATCH --array=1-{len(style_files)}
