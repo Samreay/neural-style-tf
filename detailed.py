@@ -8,7 +8,7 @@ if __name__ == "__main__":
     # Set up command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="the name of the yml config file to run. For example: configs/default.yml")
-    parser.add_argument('--styles', nargs='*', type=str, default=None,
+    parser.add_argument('--styles', nargs='+', type=str,
                         help='Filenames of the style images (example: starry-night.jpg)',
                         required=True)
 
@@ -24,10 +24,7 @@ if __name__ == "__main__":
     content_img = os.path.basename(image_path)
     img_name = content_img.split(".")[0]
 
-    if args.styles:
-        style_files = [os.path.join("styles", i) for i in args.styles]
-    else:
-        style_files = os.listdir("styles")
+    style_files = [os.path.join("styles", i) for i in args.styles]
 
     os.makedirs("logs", exist_ok=True)
     os.makedirs("jobs", exist_ok=True)
@@ -37,7 +34,7 @@ if __name__ == "__main__":
 #SBATCH --nodes=1 # Run the task on a single node
 #SBATCH --gres=gpu:1 # Request both GPUs
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
-#SBATCH --output=logs/{img_name}_%a.log
+#SBATCH --output=logs/detailed_{img_name}_%a.log
 #SBATCH --mem=30g
 #SBATCH --time=05:00:00
 #SBATCH --partition gpu
@@ -55,7 +52,7 @@ style=${{arr[$PARAMS]}}
 echo "$style"
 
 startt=$(date +"%T")
-python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size 768 --max_iterations 10000 --print_iterations 2000 --device /gpu:0 --verbose
+python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size 1536 --img_output_dir detailed_output --max_iterations 10000 --print_iterations 2000 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
