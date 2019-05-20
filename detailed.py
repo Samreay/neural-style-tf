@@ -25,6 +25,8 @@ if __name__ == "__main__":
     img_name = content_img.split(".")[0]
 
     style_files = [s + ".jpg" if "." not in s else s for s in args.styles]
+    for s in style_files:
+        assert os.path.exists(os.path.join("styles", s))
 
     os.makedirs("logs", exist_ok=True)
     os.makedirs("jobs", exist_ok=True)
