@@ -9,8 +9,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="the name of the yml config file to run. For example: configs/default.yml")
     parser.add_argument('--styles', nargs='*', type=str, default=None,
-                        help='Filenames of the style images (example: starry-night.jpg)',
-                        required=True)
+                        help='Filenames of the style images (example: starry-night.jpg)')
 
     fmt = "[%(levelname)8s |%(funcName)21s:%(lineno)3d]   %(message)s"
     logging.basicConfig(
