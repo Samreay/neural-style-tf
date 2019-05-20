@@ -26,8 +26,8 @@ if __name__ == "__main__":
 
     style_files = [s + ".jpg" if "." not in s else s for s in args.styles]
     for s in style_files:
-        assert os.path.exists(os.path.join("styles", s))
-
+        sloc = os.path.join("styles", s)
+        assert os.path.exists(sloc), f"Cannot find style {sloc}"
     os.makedirs("logs", exist_ok=True)
     os.makedirs("jobs", exist_ok=True)
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 #SBATCH --cpus-per-task=1 # Request 2 CPUs
 #SBATCH --output=logs/detailed_{img_name}_%a.log
 #SBATCH --mem=60g
-#SBATCH --time=05:00:00
+#SBATCH --time=010:00:00
 #SBATCH --partition gpu
 #SBATCH --array=1-{len(style_files)}
 #SBATCH -J {img_name}

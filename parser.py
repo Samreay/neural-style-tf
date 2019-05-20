@@ -27,7 +27,8 @@ if __name__ == "__main__":
     if args.styles:
         style_files = [s + ".jpg" if "." not in s else s for s in args.styles]
         for s in style_files:
-            assert os.path.exists(os.path.join("styles", s))
+            sloc = os.path.join("styles", s)
+            assert os.path.exists(sloc), f"Cannot find style {sloc}"
     else:
         style_files = os.listdir("styles")
 
