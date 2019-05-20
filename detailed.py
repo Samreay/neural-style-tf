@@ -24,7 +24,7 @@ if __name__ == "__main__":
     content_img = os.path.basename(image_path)
     img_name = content_img.split(".")[0]
 
-    style_files = [os.path.join("styles", i) for i in args.styles]
+    style_files = [s + ".jpg" if "." not in s else s for s in args.styles]
 
     os.makedirs("logs", exist_ok=True)
     os.makedirs("jobs", exist_ok=True)

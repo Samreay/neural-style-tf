@@ -25,7 +25,7 @@ if __name__ == "__main__":
     img_name = content_img.split(".")[0]
 
     if args.styles:
-        style_files = [os.path.join("styles", i) for i in args.styles]
+        style_files = [s + ".jpg" if "." not in s else s for s in args.styles]
     else:
         style_files = os.listdir("styles")
 
