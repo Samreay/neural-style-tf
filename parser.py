@@ -8,6 +8,7 @@ if __name__ == "__main__":
     # Set up command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="the name of the yml config file to run. For example: configs/default.yml")
+    parser.add_argument("--resolution", type=int, default=512, help="Max size of image to generate")
     parser.add_argument('--styles', nargs='*', type=str, default=None,
                         help='Filenames of the style images (example: starry-night.jpg)')
 
@@ -57,7 +58,7 @@ style=${{arr[$PARAMS]}}
 echo "$style"
 
 startt=$(date +"%T")
-python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size 768 --max_iterations 3000 --print_iterations 2000 --device /gpu:0 --verbose
+python neural_style.py --content_img {content_img} --content_img_dir {content_img_dir} --style_imgs "$style" --max_size {args.resolution} --max_iterations 3000 --print_iterations 2000 --device /gpu:0 --verbose
 endt=$(date +"%T")
 echo "Start to finish time: $startt -> $endt"
     """
