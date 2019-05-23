@@ -8,7 +8,7 @@ if __name__ == "__main__":
     # Set up command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("image", help="the name of the yml config file to run. For example: configs/default.yml")
-    parser.add_argument("--resolution", type=int, default=512, help="Max size of image to generate")
+    parser.add_argument("--resolution", type=int, default=768, help="Max size of image to generate")
     parser.add_argument('--styles', nargs='*', type=str, default=None,
                         help='Filenames of the style images (example: starry-night.jpg)')
 
